@@ -25,7 +25,7 @@
       {
         from = "host";
         host.port = 2223;
-        guest.port = 2222; # modules/ssh.nix
+        guest.port = 2222; # modules/ssh.nix (not imported; enable it for SSH)
       }
     ];
     qemu.options = [

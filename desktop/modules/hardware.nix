@@ -1,85 +1,75 @@
-{
-  config,
-  pkgs,
-  pkgs-unstable,
-  ...
-}: {
-  # Seeded by nixos-generate-config 2026-07-13, hand-maintained since.
-  # Deliberately NOT named hardware-configuration.nix: the generator
-  # overwrites that filename unconditionally (--force only guards
-  # configuration.nix). To refresh from a new machine, generate into a
-  # scratch dir and merge by hand.
-  boot.initrd.availableKernelModules = ["xhci_pci" "ahci" "nvme" "usbhid" "usb_storage"];
-  boot.kernelModules = ["kvm-amd" "nct6687"];
-  boot.extraModulePackages = [config.boot.kernelPackages.nct6687d];
-  nixpkgs.hostPlatform = "x86_64-linux";
-  hardware.enableRedistributableFirmware = true;
-  hardware.cpu.amd.updateMicrocode = true;
-  hardware.logitech.wireless.enable = true;
-  hardware.logitech.wireless.enableGraphical = true;
+{config, ...}: {
+  # Hardware for DOOM-FATAL: ASUS TUF GAMING B650E-E WIFI, AMD Ryzen 7
+  # 9800X3D, NVIDIA RTX 3060 Ti (GA104) + Radeon 610M iGPU.
+  #
+  # Storage: NixOS is a trial install alongside CachyOS, entirely on the
+  # 55 GB "NIX" btrfs (sdb4). @nixos is /, @nixos-home is /home, and the
+  # Nix store lives inside @nixos. CachyOS keeps its own store on the
+  # top-level subvolume it mounts at /nix; that mount is deliberately not
+  # reused here.
+  #
+  # The ESP is nvme0n1p5, shared with CachyOS's Limine. NixOS installs no
+  # bootloader (see modules/boot.nix); /boot is mounted only to stage the
+  # manual Limine entry.
+  boot.initrd.availableKernelModules = [
+    "btrfs"
+    "nvme"
+    "xhci_pci"
+    "ahci"
+    "usbhid"
+    "usb_storage"
+    "sd_mod"
+    "uas"
+  ];
+  boot.initrd.kernelModules = [];
+  boot.kernelModules = ["kvm-amd"];
+  boot.extraModulePackages = [];
 
-  # Shared btrfs on nvme0n1p1 (same fs as CachyOS). NixOS lives in its own
-  # @nixos subvolume; @home is SHARED with CachyOS. Create at install time:
-  #   mount /dev/nvme0n1p1 /mnt && btrfs subvolume create /mnt/@nixos
   fileSystems."/" = {
-    device = "/dev/disk/by-uuid/288a2b9a-42f1-49b8-9fa5-fb4dcb9f9702";
+    device = "/dev/disk/by-uuid/b8f256a6-61d1-40e6-8cae-bd3b4c063caa";
     fsType = "btrfs";
     options = ["subvol=@nixos" "noatime" "compress=zstd:3" "discard=async" "commit=120"];
   };
   fileSystems."/home" = {
-    device = "/dev/disk/by-uuid/288a2b9a-42f1-49b8-9fa5-fb4dcb9f9702";
+    device = "/dev/disk/by-uuid/b8f256a6-61d1-40e6-8cae-bd3b4c063caa";
     fsType = "btrfs";
-    options = ["subvol=@home" "noatime" "compress=zstd:3" "discard=async" "commit=120"];
+    options = ["subvol=@nixos-home" "noatime" "compress=zstd:3" "discard=async" "commit=120"];
   };
-  # ~/.config is its own subvolume — unmanaged app state quarantined from
-  # @home; unmount + rebuild = clean-state test of the HM-managed setup.
-  # fileSystems."/home/noah/.config" = {
-  #   device = "/dev/disk/by-uuid/288a2b9a-42f1-49b8-9fa5-fb4dcb9f9702";
-  #   fsType = "btrfs";
-  #   options = ["subvol=@config" "noatime" "compress=zstd:3" "discard=async" "commit=120" "nofail"];
-  # };
-  # # ESP shared with Windows and CachyOS/Limine
+  # Shared ESP: CachyOS's Limine lives here. Mount it, but do not let NixOS
+  # own it (boot.nix disables every bootloader).
   fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/9FE9-13C0";
+    device = "/dev/disk/by-uuid/E452-3E68";
     fsType = "vfat";
     options = ["fmask=0077" "dmask=0077"];
   };
-  fileSystems."/mnt/linux_games" = {
-    device = "/dev/disk/by-uuid/aeb686ed-b3c4-4df3-832b-535be4780d48";
-    fsType = "btrfs";
-    options = ["noatime" "compress=zstd:3"];
-  };
 
-  # RTX 4080 Super (Ada) — open kernel modules are the supported path.
+  swapDevices = []; # zramSwap is enabled in modules/boot.nix
+
+  nixpkgs.hostPlatform = "x86_64-linux";
+  hardware.enableRedistributableFirmware = true;
+  hardware.cpu.amd.updateMicrocode = true;
+
+  # RTX 3060 Ti (Ampere): the open kernel modules are supported.
   hardware.graphics.enable = true;
   services.xserver.videoDrivers = ["nvidia"];
   hardware.nvidia = {
     modesetting.enable = true;
     open = true;
-    package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
     powerManagement.enable = true;
   };
+  # If the monitor is plugged into the motherboard (Radeon 610M) instead of
+  # the 3060 Ti, enable PRIME offload:
+  # hardware.nvidia.prime = {
+  #   offload.enable = true;
+  #   nvidiaBusId = "PCI:1:0:0";
+  #   amdgpuBusId = "PCI:12:0:0";
+  # };
 
-  # RodeCaster virtual sinks (Game/Music/A/B) and the per-app routing that
-  # targets them. System-level because they describe this box's audio
-  # interface — the VM has no RodeCaster and shouldn't build them.
-  # configPackages, not environment.etc: NixOS asserts against writing to
-  # /etc/pipewire directly.
-  services.pipewire.configPackages = [
-    (pkgs.writeTextDir "share/pipewire/pipewire.conf.d/99-rodecaster-virtual-sinks.conf"
-      (builtins.readFile ../configs/pipewire/99-rodecaster-virtual-sinks.conf))
-    (pkgs.writeTextDir "share/pipewire/pipewire.conf.d/90-app-routing.conf"
-      (builtins.readFile ../configs/pipewire/90-app-routing.conf))
-  ];
-
-  # bluetooth (Magic Keyboard) — pairing persists in /var/lib/bluetooth,
-  # so the PIN prompt only happens once per pairing. If reconnects ever
-  # start stalling on a manual accept again, the device fell back to
-  # untrusted — fix: bluetoothctl trust B0:BE:83:E7:DD:7E
+  # MediaTek MT7922 (Wi-Fi + Bluetooth); firmware comes from
+  # enableRedistributableFirmware above.
   hardware.bluetooth = {
     enable = true;
-    package = pkgs-unstable.bluez;
     powerOnBoot = true;
-    settings.General.Experimental = true;
   };
 }

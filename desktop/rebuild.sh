@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Rebuild NixOS from this flake, recording each generation in git.
-# The Limine bootloader module handles ESP sync automatically.
+# This trial config installs no bootloader; run ./sync-limine.sh after a
+# kernel change to refresh the copies on the shared ESP.
 #
 # Usage: rebuild.sh [--force] [commit subject] [body paragraph...]
 #   Commits pending work FIRST (so the generation records an exact rev via

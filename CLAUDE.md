@@ -43,8 +43,9 @@ What `rebuild.sh` does (two-commit protocol, see
 unless a subject is given), build, print `nvd diff`, `sudo nixos-rebuild
 switch --store-path`, then add an empty `rebuild: gen N` commit holding the
 shortlog and nvd diff. It also runs on a clean tree if HEAD moved since the
-last rebuild. A failed build soft-resets the work commit. The Limine module
-handles ESP sync (kernel copy + signing) on switch.
+last rebuild. A failed build soft-resets the work commit. This trial config
+installs no bootloader; `sync-limine.sh` refreshes the kernel/initrd copies on
+the shared ESP after a kernel change.
 
 **Check `git status` before running it.** Because it sweeps every tracked
 change, stop and ask if the repo is mid-rebase/merge or has tracked edits
@@ -76,12 +77,12 @@ There is no test suite or linter beyond `alejandra` formatting and
 
 ## Architecture
 
-- **NixOS owns Limine.** `boot.loader.limine.enable = true` with
-  `secureBoot.enable = true` — NixOS manages the Limine binary, config, and
-  signing via the native module. CachyOS and Windows are static entries in
-  `extraEntries`. The old `limine-sync.sh` is no longer used.
-- **Secure Boot**: Limine EFI binary is signed with `sbctl` (keys under
-  `/var/lib/sbctl`, originally from the CachyOS install).
+- **Bootloader**: this trial install boots via **CachyOS's Limine**. NixOS's
+  `modules/boot.nix` disables GRUB, systemd-boot and Limine and sets
+  `canTouchEfiVariables = false`; the ESP entry is added by hand (see
+  `docs/install-doom-fatal.md`). `desktop/sync-limine.sh` refreshes the
+  kernel/initrd copies after a kernel change. The upstream config used NixOS's
+  native Limine module with sbctl Secure Boot; that is not active here.
 - Desktop: noctalia (shell) on a choice of compositors, niri
   (`modules/niri.nix`) or umbriel (`modules/umbriel.nix`), picked at login by
   `noctalia-greeter` (`modules/desktop.nix`).
@@ -90,7 +91,7 @@ There is no test suite or linter beyond `alejandra` formatting and
 
 - `desktop/CONTEXT.md`: glossary for module boundaries (portable /
   hardware-locked / opinionated modules, live-lane vs stable-lane dotfiles,
-  shared `/home` with CachyOS). Read before moving modules or dotfile ownership.
+  separate `@nixos-home`). Read before moving modules or dotfile ownership.
 - `CONTEXT.md` (root): glossary for the Claude Code TTS setup only.
 - `docs/adr/`: decisions (two-commit rebuild, live-lane Claude config).
 - `desktop/configs/niri/CLAUDE.md`: niri/noctalia config layout.
@@ -100,7 +101,7 @@ There is no test suite or linter beyond `alejandra` formatting and
 ```bash
 nix build ~/nixos/desktop#nixosConfigurations.vm.config.system.build.vm
 NIX_DISK_IMAGE=<scratchpad>/vm.qcow2 ./result/bin/run-nixos-vm-vm   # fresh disk
-ssh -p 2223 noah@localhost
+ssh -p 2223 moeikrey@localhost   # enable ./modules/ssh.nix first
 ```
 
 QEMU `screendump` fails ("no surface", GL display): log in via the monitor's

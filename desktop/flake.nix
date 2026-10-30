@@ -85,7 +85,6 @@
       ./modules/performance.nix
       ./modules/fonts.nix
       ./modules/identity.nix
-      ./modules/ssh.nix
       home-manager.nixosModules.home-manager
       inputs.noctalia-greeter.nixosModules.default
       {

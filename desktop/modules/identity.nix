@@ -6,7 +6,7 @@
   # This is the only system user managed by this host configuration.
   users.users.${identity.username} = {
     isNormalUser = true;
-    uid = 1000; # must match CachyOS uid for shared @home
+    uid = 1000; # matches the CachyOS user
     extraGroups = ["wheel" "networkmanager" "video" "gamemode"];
     shell = pkgs.fish;
     # Only applies when the user is first created; change it with `passwd`.
@@ -19,14 +19,6 @@
       commands = [
         {
           command = "/run/current-system/sw/bin/nixos-rebuild";
-          options = ["NOPASSWD"];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl start zerotierone";
-          options = ["NOPASSWD"];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl stop zerotierone";
           options = ["NOPASSWD"];
         }
       ];

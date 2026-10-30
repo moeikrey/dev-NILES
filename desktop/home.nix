@@ -14,9 +14,10 @@
   home.homeDirectory = identity.homeDirectory;
   home.stateVersion = "26.05";
 
-  # ponytail: @home is shared with CachyOS, so most of ~/.config stays
-  # canonical/loose (niri, noctalia, fish, …) via the live-lane symlinks in
-  # modules/home/dotfiles.nix; migration to HM-managed files is piecemeal.
+  # ponytail: the NixOS home is its own @nixos-home subvolume, but most of
+  # ~/.config still stays canonical/loose (niri, noctalia, fish, …) via the
+  # live-lane symlinks in modules/home/dotfiles.nix; migration to HM-managed
+  # files is piecemeal.
 
   # Runs noctalia as a user unit (Restart=on-failure, own journal) instead of
   # niri's spawn-at-startup. `settings`/`customPalettes` stay unset on purpose:

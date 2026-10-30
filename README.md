@@ -1,7 +1,8 @@
 # nixos
 
 Noah's NixOS config. niri (Wayland compositor) + noctalia on an AMD/NVIDIA
-desktop, dual-booting CachyOS via Limine on a shared ESP and `@home` subvolume.
+desktop, dual-booting CachyOS via Limine on a shared ESP and a separate
+`@nixos-home` subvolume on the `NIX` drive.
 
 The root `flake.nix` is a **template registry only**. Each top-level folder is
 a self-contained flake and is the thing actually built — currently just

@@ -93,10 +93,13 @@ Bluetooth device assumptions.
 
 ## 5. Choose a bootloader
 
-`modules/boot.nix` is specific to this dual-boot system: NixOS owns Limine on
-a shared ESP and adds CachyOS and Windows entries. Replace it with the target
-bootloader configuration if that is not your layout, or remove it from the
-bare-metal module list and add your own boot module.
+The checked-in `modules/boot.nix` is a trial setup: it disables GRUB,
+systemd-boot and Limine so the host's existing bootloader (CachyOS's Limine)
+stays in charge, and the NixOS entry is added by hand. See
+[`install-doom-fatal.md`](install-doom-fatal.md) for the exact steps.
+
+If you want NixOS to own the ESP instead, replace `modules/boot.nix` with the
+appropriate bootloader configuration (or restore the upstream Limine module).
 
 ## 6. Validate and deploy
 

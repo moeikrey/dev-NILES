@@ -19,8 +19,10 @@ A config file symlinked to the repo checkout (not the Nix store) via `mkOutOfSto
 ### Stable-lane dotfile
 A config file copied into the Nix store at build time. Requires a rebuild to change. Used for configs that are set-and-forget or that must not be accidentally mutated.
 
-### Shared home
-The `@home` btrfs subvolume is mounted at `/home` by both NixOS and CachyOS. Anything home-manager writes to `~` is visible to both OSes. This constrains what HM can safely own.
+### Separate home (trial)
+The `@nixos-home` btrfs subvolume is mounted at `/home` by the trial NixOS
+install, while CachyOS keeps its own `@home`. Home Manager owns the NixOS home
+independently; the two OSes do not share `~`.
 
 ## Principles
 
